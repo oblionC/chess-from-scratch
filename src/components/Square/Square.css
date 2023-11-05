@@ -1,0 +1,11 @@
+.square {
+  width: 12.5%;
+  height: 12.5%;
+}
+.light-square {
+  background-color: white;
+}
+.dark-square{
+  background-color: black;
+  color: white
+}

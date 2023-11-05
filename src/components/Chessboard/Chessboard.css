@@ -1,0 +1,9 @@
+.chessboard {
+  align-content: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  width: 800px;
+  height: 800px;
+  background-color: black;
+  border: black;
+}
