@@ -1,11 +1,18 @@
 .square {
   width: 12.5%;
   height: 12.5%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .light-square {
-  background-color: white;
+  background-color: #eeeed2;
 }
 .dark-square{
-  background-color: black;
+  background-color: #769656;
   color: white
+}
+.piece{
+  width: 80%;
+  height: 80%;
 }
