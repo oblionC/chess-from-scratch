@@ -13,6 +13,12 @@
   color: white
 }
 .piece{
-  width: 80%;
-  height: 80%;
+  background-repeat: no-repeat;
+  background-size:90% 90%;
+  background-position: center;
+  width: 100px;
+  height: 100px;
+}
+.piece:hover {
+  cursor: grab;
 }
