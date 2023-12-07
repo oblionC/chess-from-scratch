@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { cordinatesToIndex } from '../../utility/cordinatesToIndex'
 import Square from "../Square"
 import "./Chessboard.css"
 import Piece from "../types"
+import { TILE_LENGTH } from "../../constants"
 
 
 
-let pieces = []
+let pieces: Piece[] = []
 // Black pawns
 for(let i = 0; i < 8; i++) {
   let piece = new Piece("assets/images/pawn_b.png", i, 6);
@@ -42,26 +44,36 @@ pieces.push(new Piece("assets/images/king_w.png", 4, 0));
 pieces.push(new Piece("assets/images/queen_b.png", 3, 7));
 pieces.push(new Piece("assets/images/queen_w.png", 3, 0));
 
-let board_tiles = []
-for(let i = 7; i >= 0; i--) {
-  for(let j = 0; j <= 7; j++) {
-    board_tiles.push(<Square key={`${j},${i}`} row={i} column={j} piece={undefined}/>)
-  }
-}
 
-for(let i=0, len=pieces.length; len>i; i++) {
-  let piece = pieces[i];
-  // Board tiles are stored in a 1D array, so this formula calculates the index of the tile in that array give its x and y position. Only works for an 8x8 board. 
-  let index = ((7 - piece.y) * 8) + piece.x;
-  board_tiles[index] = <Square key={`${piece.x},${piece.y}`} row={piece.y} column={piece.x} piece={piece} />
-}
 
 export default function Chessboard () {
+  const [boardState, setBoardState] = useState<Piece[]>(pieces)
   const chessboardRef = useRef(null)
+
   let activePiece: undefined | HTMLElement = undefined;
+  let chessboard = chessboardRef.current;
+  let rect: any;
+  let w: number;
+  let h: number;
+  let startXIndex: number, startYIndex: number;
+  let endXIndex: number, endYIndex: number;
 
   function grabPiece(e: React.MouseEvent) {
     let element = e.target as HTMLElement
+    
+    chessboard = chessboardRef.current
+    rect = chessboard.getBoundingClientRect();
+    w = rect.right - rect.left;
+    h = rect.bottom - rect.top;
+
+    // Finds x and y position of piece on board using its position relative to the chessboard
+    const x = e.clientX;
+    const y = e.clientY;
+    const x_rel = x - rect.left;
+    const y_rel = rect.bottom - y;
+    startXIndex = Math.ceil(x_rel / TILE_LENGTH) - 1
+    startYIndex = Math.ceil(y_rel / TILE_LENGTH) - 1
+
     if(element.classList.contains("piece")){
       activePiece = element
     }
@@ -73,37 +85,83 @@ export default function Chessboard () {
       const x = e.clientX;
       const y = e.clientY;
 
-      let chessboard = chessboardRef.current;
-      let rect;
       if(chessboard) {
-        rect = chessboard.getBoundingClientRect();
-        let w = rect.right - rect.left;
-        let h = rect.bottom - rect.top;
-
         element.style.position = "absolute";
-        element.style.top = `${y - 50}px`;
-        element.style.left = `${x - 50}px`;
+        element.style.top = `${y - TILE_LENGTH / 2}px`;
+        element.style.left = `${x - TILE_LENGTH / 2}px`;
+
+        // Bound piece to the board
         if(x < rect.left) {
-          element.style.left = `${rect.left - 50}px`;
+          element.style.left = `${rect.left - TILE_LENGTH / 2}px`;
         }
         else if(x > rect.left + w) {
-          element.style.left = `${rect.left + w - 50}px`;
+          element.style.left = `${rect.left + w - TILE_LENGTH / 2}px`;
         }
         
         if (y < rect.top) {
-          element.style.top = `${rect.top - 50}px`;
+          element.style.top = `${rect.top - TILE_LENGTH / 2}px`;
         }
         else if (y > rect.top + h) {
-          element.style.top  = `${rect.top + w - 50}px`;
+          element.style.top  = `${rect.top + w - TILE_LENGTH / 2}px`;
         }
       }
     }
   }
 
   function releasePiece(e: React.MouseEvent) {
+    if(activePiece) {
+      const x = e.clientX;
+      const y = e.clientY;
+      const x_rel = x - rect.left;
+      const y_rel = rect.bottom - y;
+      endXIndex = Math.ceil(x_rel / TILE_LENGTH) - 1
+      endYIndex = Math.ceil(y_rel / TILE_LENGTH) - 1
+      
+
+
+      setBoardState(value => {
+        console.log(startXIndex, startYIndex)
+        console.log(endXIndex, endYIndex) 
+        const pieces = value.map(p => {
+          let piece = p;
+          let startFound = false;
+          if(p.x === startXIndex && p.y === startYIndex) {
+            startFound = true;
+            piece.x = endXIndex;
+            piece.y = endYIndex;
+          }
+          else if(p.x === endXIndex && p.y === endYIndex && startFound) {
+            piece.x = -1;
+          }
+          return piece;
+        })
+        return pieces;
+      })
+      console.log(boardState)
+
+
+    }
     
     activePiece = undefined
 }
+
+let board_tiles: any[] = []
+for(let i = 7; i >= 0; i--) {
+  for(let j = 0; j <= 7; j++) {
+    board_tiles.push(<Square key={`${j},${i}`} row={i} column={j} piece={undefined}/>)
+  }
+}
+
+for(let i=0, len=boardState.length; len>i; i++) {
+  let piece = boardState[i];
+  if(piece.x != -1) {
+  // Board tiles are stored in a 1D array, so this formula calculates the index of the tile in that array give its x and y position. Only works for an 8x8 board. 
+  let index = cordinatesToIndex(piece.x, piece.y)
+  board_tiles[index] = <Square key={`${piece.x},${piece.y}`} row={piece.y} column={piece.x} piece={piece} />
+  }
+
+}
+
   return (
     <div className="chessboard" onMouseDown={e => grabPiece(e)} onMouseUp={e => releasePiece(e)} onMouseMove={e => movePiece(e)} ref={chessboardRef}>
       {board_tiles}
