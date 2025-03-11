@@ -22,3 +22,9 @@
 .piece:hover {
   cursor: grab;
 }
+.cords {
+  position: absolute;
+  font-size: 20px;
+  color: red;
+  user-select: none;
+}
